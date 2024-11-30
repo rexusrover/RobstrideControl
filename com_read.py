@@ -34,7 +34,7 @@ def listen_for_data(ser):
 
 def main():
     # Configuration
-    port = "COM7"  # Adjust this based on your setup
+    port = "COM3"  # Adjust this based on your setup
     baud_rate = 921600
 
     try:
