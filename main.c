@@ -9,5 +9,9 @@ int main(){
     print_debug();
     command_construct(253, 127, 3);
     print_debug();
+    command_construct(253, 127, 6);
+    print_debug();
+    command_construct(253, 127, 7);
+    print_debug();
     return 0;
 }

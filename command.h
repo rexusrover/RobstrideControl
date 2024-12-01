@@ -1,6 +1,11 @@
 #ifndef __COMMAND_H__
 #define __COMMAND_H__
 
+
+// ID assigned manually, default to be 1
+extern int preset_CAN_ID;
+extern int baud_rate;
+
 void init();
 void print_debug();
 
