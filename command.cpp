@@ -1,5 +1,7 @@
-#include "command.h"
+#include "command.hpp"
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 #define HEADER_SIZE     2 * 2
 #define EXTENDED_SIZE   4 * 2
@@ -39,8 +41,12 @@ char *end_f         = send_command + 30;
 //                                                            //
 //============================================================//
 
-int preset_CAN_ID = 1;
-int baud_rate     = 1000000;
+int preset_CAN_ID   = 1;
+int baud_rate       = 1000000;
+int parameter       = 0x7010;
+
+int data_int = 2;
+float data_float = 12.53;
 
 void init();
 void craft_databits(int command);
@@ -49,6 +55,11 @@ void command_0();
 void command_1();
 void command_2();
 void command_7();
+void command_17(int parameter);
+void command_18(int parameter);
+void parameter_handler(int parameter);
+void data_handler(int parameter);
+void float_to_binary(float value);
 
 void command_construct(int host_CAN_ID, int target_CAN_ID, int command);
 void print_debug();
@@ -83,11 +94,14 @@ void init(){
 
 void print_debug(){
     int i;
+    printf("\n========================================\n");
     printf("Current full command: ");
+    
     for(i = 0; i < 34; i++){
         if(i % 2==0) printf("%c", send_command[i]);
         else printf("%c ", send_command[i]);
     }
+    printf("\n========================================\n");
     printf("\n");
 }
 
@@ -164,9 +178,13 @@ void craft_databits(int command){
         case 7:                         // command 7 - manually assign motor_CAN_ID
             command_0();
             break;
-        case 17:
+        case 17:                        // command 17 - read data
+            command_0();                // first occupy all data with 0
+            command_17(parameter);    // then fill the remaining fields according to data sheet
             break;
-        case 18:
+        case 18:                        // command 18 - write data
+            command_0();                // first occupy all data with 0
+            command_18(parameter);    // then fill the remaining fields according to data sheet
             break;
         case 21:
             command_0();
@@ -206,4 +224,154 @@ void command_1(){
 
 void command_2(){
 
+}
+
+void command_18(int parameter){
+    parameter_handler(parameter);
+    data_handler(parameter);
+}
+
+void command_17(int parameter){
+    parameter_handler(parameter);
+}
+
+void parameter_handler(int parameter){
+    if(parameter % 16 < 10) data_f[1] = (char) (parameter % 16 + 48);
+    else data_f[1] = (char)(parameter % 16 + 97 - 10);
+
+    parameter >>= 4;
+
+    if(parameter % 16 < 10) data_f[0] = (char) (parameter % 16 + 48);
+    else data_f[0] = (char)(parameter % 16 + 97 - 10);
+
+    parameter >>= 4;
+
+    if(parameter % 16 < 10) data_f[3] = (char) (parameter % 16 + 48);
+    else data_f[3] = (char)(parameter % 16 + 97 - 10);
+
+    parameter >>= 4;
+
+    if(parameter % 16 < 10) data_f[2] = (char) (parameter % 16 + 48);
+    else data_f[2] = (char)(parameter % 16 + 97 - 10);
+}
+
+void data_handler(int parameter){
+    char *data_zone = data_f + 8;
+    switch (parameter){
+        case 0x7005:
+            if(data_int < 0 || data_int > 4) data_zone[1] = '0';
+            else data_zone[1] = (char) (data_int + 48);
+            break;
+        case 0x701d:
+            // this logic needs to be implemented
+            break;
+        case 0x7006:
+        case 0x700a:
+        case 0x700b:
+        case 0x7010:
+        case 0x7011:
+        case 0x7014:
+        case 0x7016:
+        case 0x7017:
+        case 0x7018:
+        case 0x7019:
+        case 0x701a:
+        case 0x701b:
+        case 0x701c:
+        case 0x701e:
+        case 0x701f:
+        case 0x7020:
+            float_to_binary(data_float);
+        default:
+            break;
+    }
+}
+
+void float_to_binary(float value){
+    char *data_zone = data_f + 8;
+
+    int hex_value = 0;
+    int integer_part;
+    float fraction_part;
+
+    // sign bit
+    if(value < 0) {
+        hex_value++; value = -value;
+    }
+    hex_value <<= 8;
+
+    integer_part  = (int) value;
+    fraction_part = value - (float) integer_part;
+
+    char *temp_integer = (char*) malloc(sizeof(char) * 23);
+
+    // process int part
+    int i = 0;
+    //printf("Integer part: %d\n", integer_part);
+    //printf("Fraction part: %f\n", fraction_part);
+    while(integer_part >0){
+        if(integer_part % 2 == 1) temp_integer[i] = '1';
+        else temp_integer[i] = '0';
+
+        integer_part >>= 1;
+        i++;
+    }
+
+    int int_size        = i - 1;
+    int fraction_size   = 23 - int_size;
+    //printf("Number of bits: %d \n", i);
+    hex_value += 127 + int_size;
+
+    char* temp_fraction = (char *) malloc(sizeof(char) * fraction_size);
+    i = 0;
+    while(i < fraction_size){
+        if(fraction_part == 0){
+            temp_fraction[i] = '0';
+            i++;
+            continue;
+        }
+        if(fraction_part >= 0.5){
+            temp_fraction[i] = '1';
+            fraction_part = 2 * fraction_part - 1;
+        } else{
+            temp_fraction[i] = '0';
+            fraction_part = 2 * fraction_part;
+        }
+        i++;
+    }
+
+    /*
+    printf("Fraction part in binary: ");
+    for(i = 0; i < fraction_size; i++){
+        printf("%c", temp_fraction[i]);
+    }
+    */
+
+    for(i = int_size - 1; i >= 0; i--){
+        hex_value <<= 1;
+        if(temp_integer[i] == '1') hex_value++;
+    }
+
+    for(i = 0; i < fraction_size; i++){
+        hex_value <<= 1;
+        if(temp_fraction[i] == '1') hex_value++;
+    }
+
+    //printf("\nHex value : %x\n", hex_value);
+
+    for(i = 0; i < 4; i++){
+        if(hex_value % 16 < 10) data_zone[1 + 2*i] = (char) (hex_value%16 + 48);
+        else data_zone[1+ 2*i] = (char) (hex_value % 16 + 97 - 10);
+        hex_value >>= 4;
+        if(hex_value % 16 < 10) data_zone[2*i] = (char) (hex_value%16 + 48);
+        else data_zone[2*i] = (char) (hex_value % 16 + 97 - 10);
+        hex_value >>= 4;
+    } 
+
+    free(temp_fraction);
+    free(temp_integer);
+    //delete(temp_fraction);
+    //delete(temp_integer);
+
+    return;
 }
