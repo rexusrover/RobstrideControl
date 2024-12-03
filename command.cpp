@@ -3,11 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define HEADER_SIZE     2 * 2
-#define EXTENDED_SIZE   4 * 2
-#define NUMBER_SIZE     1 * 2
-#define DATA_SIZE       8 * 2
-#define ENDING_SIZE     2 * 2
+
 
 //============================================================//
 //                                                            //
@@ -29,6 +25,52 @@
 //  Data bytes              | Ending frame          |         //
 //
 // total send_command frame
+
+Motor::Motor(){
+    init_commands();
+    init_values();
+}
+
+Motor::~Motor(){
+    free(send_command);
+    free(recv_command);
+    free(header_f);
+    free(extended_f);
+    free(number_f);
+    free(data_f);
+    free(end_f);
+}
+
+void Motor::init_commands(){
+    send_command[0]  = '4';
+    send_command[1]  = '1';
+    send_command[2]  = '5';
+    send_command[3]  = '4';
+
+    number_f[0]      = '0';
+    number_f[1]      = '8';
+
+    end_f[0]         = '0';
+    end_f[1]         = 'd';
+    end_f[2]         = '0';
+    end_f[3]         = 'a';
+}
+
+void Motor::init_values(){
+
+}
+
+void Motor::print_debug(){
+    int i;
+    printf("\nCurrent full command: ");
+    for(i = 0; i < COMMAND_SIZE; i++){
+        printf("%c", send_command[i]);
+        if(i % 2 == 1) printf(" ");
+    }
+    printf("\n");
+}
+
+
 char send_command[34] = {0};
 
 // sections to edit within the command
@@ -44,10 +86,10 @@ char *end_f         = send_command + 30;
 // define values
 int preset_CAN_ID   = 1;
 int baud_rate       = 1000000;
-int parameter       = 0x7010;
+int parameter       = 0x700a;
 
 int data_int        = 2;
-float data_float    = 12.53;
+float data_float    = 1.0;
 
 float target_angle  = 1.0;
 float target_omega  = -1.0;
@@ -77,21 +119,9 @@ void init(){
     send_command[2]  = '5';
     send_command[3]  = '4';
 
-    // number of data bits
-    /*
-    send_command[12] = '0';
-    send_command[13] = '8';
-    */
     number_f[0]      = '0';
     number_f[1]      = '8';
 
-    // ending frame
-    /*
-    send_command[30] = '0';
-    send_command[31] = 'd';
-    send_command[32] = '0';
-    send_command[33] = 'a';
-    */
     end_f[0]         = '0';
     end_f[1]         = 'd';
     end_f[2]         = '0';
@@ -317,6 +347,8 @@ void data_handler(int parameter){
             break;
         case 0x7006:
         case 0x700a:
+            float_to_binary(data_float);
+            break;
         case 0x700b:
         case 0x7010:
         case 0x7011:
@@ -324,6 +356,8 @@ void data_handler(int parameter){
         case 0x7016:
         case 0x7017:
         case 0x7018:
+            float_to_binary(data_float);
+            break;
         case 0x7019:
         case 0x701a:
         case 0x701b:
