@@ -7,6 +7,8 @@ int main(){
 
     command_construct(253, 1  , 0);
     print_debug();
+    command_construct(253, 127, 1);
+    print_debug();
     command_construct(253, 127, 3);
     print_debug();
     command_construct(253, 127, 6);

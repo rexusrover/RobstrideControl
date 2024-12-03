@@ -41,18 +41,24 @@ char *end_f         = send_command + 30;
 //                                                            //
 //============================================================//
 
+// define values
 int preset_CAN_ID   = 1;
 int baud_rate       = 1000000;
 int parameter       = 0x7010;
 
-int data_int = 2;
-float data_float = 12.53;
+int data_int        = 2;
+float data_float    = 12.53;
+
+float target_angle  = 1.0;
+float target_omega  = -1.0;
+float target_kp     = 1.0;
+float target_kd     = -1.0;
 
 void init();
 void craft_databits(int command);
 
 void command_0();
-void command_1();
+void command_1(float , float, float , float);
 void command_2();
 void command_7();
 void command_17(int parameter);
@@ -162,7 +168,7 @@ void craft_databits(int command){
             command_0();                // retrieve host ID
             break;
         case 1:
-            command_1();                // ?? control
+            command_1(target_angle, target_omega, target_kp, target_kd);                // ?? control
             break;
         case 2:
             command_2();                // this might be the response?
@@ -218,8 +224,52 @@ void command_0(){
     }
 }
 
-void command_1(){
+void command_1(float angle, float rad, float kp, float kd){
+    int data_field  = 0x0;
+    int step        = 65535;
+    int temp;
+    int i;
 
+    // angle (-4pi -> 4pi = 0 -> 65535)
+    float angle_quant = (4.0 - (-4.0)) / (float) step;
+    temp = (int)((angle - (-4.0)) / angle_quant);
+    data_field = temp;
+    for( i = 3; i >= 0 ;i--){
+        if(data_field % 16 < 10) data_f[i] = (char) (data_field % 16) + 48;
+        else data_f[i] = (data_field % 16 + 97 - 10);
+        data_field >>= 4;
+    }
+    data_field = 0;
+    // rad (-44rad/s -> 44rad/s = 0 -> 65535)
+    float rad_quant = (44.0 - (-44.0)) / (float) step;
+    temp = (int)((rad - (-44.0)) / rad_quant);
+    data_field = temp;
+    for( i = 3; i >= 0 ;i--){
+        if(data_field % 16 < 10) data_f[4 + i] = (char) (data_field % 16) + 48;
+        else data_f[4 + i] = (data_field % 16 + 97 - 10);
+        data_field >>= 4;
+    }
+    data_field = 0;
+    // kp (0 -> 500 = 0 -> 65535)
+    float kp_quant = (500.0 - 0.0) / (float) step;
+    temp = (int)((angle - 0.0) / kp_quant);
+    data_field = temp;
+    for( i = 3; i >= 0 ;i--){
+        if(data_field % 16 < 10) data_f[8 + i] = (char) (data_field % 16) + 48;
+        else data_f[8 + i] = (data_field % 16 + 97 - 10);
+        data_field >>= 4;
+    }
+    data_field = 0;
+    // kd (0 -> 5 = 0 -> 35655)
+    float kd_quant = (5.0 - 0.0) / (float) step;
+    temp = (int)((angle - 0.0) / kd_quant);
+    data_field += temp;
+    for( i = 3; i >= 0 ;i--){
+        if(data_field % 16 < 10) data_f[12 + i] = (char) (data_field % 16) + 48;
+        else data_f[12 + i] = (data_field % 16 + 97 - 10);
+        data_field >>= 4;
+    }
+    
 }
 
 void command_2(){

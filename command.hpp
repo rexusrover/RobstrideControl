@@ -10,6 +10,11 @@ extern int parameter;
 extern int data_int;
 extern float data_float;
 
+extern float target_angle;
+extern float target_omega;
+extern float target_kp;
+extern float target_kd;
+
 void init();
 void print_debug();
 
