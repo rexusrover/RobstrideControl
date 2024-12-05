@@ -142,20 +142,26 @@ public:
         }
         cout << endl;
 
-        // Read the response
+        // Read and interpret response
         if (interpretResponse) {
-            interpretResponseMessage();
+            readAndInterpretResponse();
         } else {
             readResponse();
         }
     }
 
     // Read and interpret response from the motor
-    void interpretResponseMessage() {
+    void readAndInterpretResponse() {
         uint8_t buffer[1024] = {0};
         DWORD bytesRead;
 
         if (ReadFile(hSerial, buffer, sizeof(buffer), &bytesRead, NULL)) {
+            cout << "Received: ";
+            for (DWORD i = 0; i < bytesRead; ++i) {
+                cout << hex << setw(2) << setfill('0') << (int)buffer[i] << " ";
+            }
+            cout << endl;
+
             // Ensure the response has enough bytes
             if (bytesRead < 14) {
                 cerr << "Error: Incomplete response received." << endl;
@@ -163,16 +169,16 @@ public:
             }
 
             // Extract the parameter index
-            uint16_t paramIndex = (buffer[8] << 8) | buffer[9];
+            uint16_t paramIndex = (buffer[7] << 8) | buffer[8];
 
             // Extract the value based on the parameter type
             float value = 0.0;
             if (paramIndex == MECH_POS.index) {
                 memcpy(&value, &buffer[12], sizeof(float));
+                cout << "Parameter: MECH_POS, Value: " << value << endl;
+            } else {
+                cout << "Unknown parameter index: " << hex << paramIndex << endl;
             }
-
-            // Print the interpreted response
-            cout << "Parameter: MECH_POS, Value: " << value << endl;
         } else {
             cerr << "Error reading from serial port" << endl;
         }
@@ -228,7 +234,6 @@ HANDLE initializeSerial(const string& portName, int baudRate) {
         exit(1);
     }
 
-    // Configure serial port settings
     DCB dcbSerialParams = {0};
     dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
     if (!GetCommState(hSerial, &dcbSerialParams)) {
@@ -247,7 +252,6 @@ HANDLE initializeSerial(const string& portName, int baudRate) {
         exit(1);
     }
 
-    // Set timeouts
     COMMTIMEOUTS timeouts = {0};
     timeouts.ReadIntervalTimeout = 50;
     timeouts.ReadTotalTimeoutConstant = 50;
