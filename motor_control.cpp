@@ -121,7 +121,7 @@ public:
     }
 
     // Send a CAN message
-    void sendCommand(CANMessage msg) {
+    void sendCommand(CANMessage msg, bool interpretResponse = false) {
         vector<uint8_t> message;
         message.insert(message.end(), msg.header, msg.header + 2);
         message.insert(message.end(), msg.extendedHeader, msg.extendedHeader + 4);
@@ -143,10 +143,42 @@ public:
         cout << endl;
 
         // Read the response
-        readResponse();
+        if (interpretResponse) {
+            interpretResponseMessage();
+        } else {
+            readResponse();
+        }
     }
 
-    // Read response from the motor
+    // Read and interpret response from the motor
+    void interpretResponseMessage() {
+        uint8_t buffer[1024] = {0};
+        DWORD bytesRead;
+
+        if (ReadFile(hSerial, buffer, sizeof(buffer), &bytesRead, NULL)) {
+            // Ensure the response has enough bytes
+            if (bytesRead < 14) {
+                cerr << "Error: Incomplete response received." << endl;
+                return;
+            }
+
+            // Extract the parameter index
+            uint16_t paramIndex = (buffer[8] << 8) | buffer[9];
+
+            // Extract the value based on the parameter type
+            float value = 0.0;
+            if (paramIndex == MECH_POS.index) {
+                memcpy(&value, &buffer[12], sizeof(float));
+            }
+
+            // Print the interpreted response
+            cout << "Parameter: MECH_POS, Value: " << value << endl;
+        } else {
+            cerr << "Error reading from serial port" << endl;
+        }
+    }
+
+    // Read response from the motor (non-interpreted)
     void readResponse() {
         uint8_t buffer[1024] = {0};
         DWORD bytesRead;
@@ -182,41 +214,19 @@ public:
 
     // Read Parameter Command
     void readParameter(const Parameter& param) {
-        CANMessage readMsg;
-
-        // Calculate the extended header
-        vector<uint8_t> extendedHeader = calculateExtendedHeader(COMM_TYPE_READ);
-        memcpy(readMsg.extendedHeader, extendedHeader.data(), 4);
-
-        // Fill the Data Area
-        readMsg.data[0] = (param.index >> 8) & 0xFF; // Parameter Index High Byte
-        readMsg.data[1] = param.index & 0xFF;        // Parameter Index Low Byte
-        readMsg.data[2] = 0x00;                      // Reserved
-        readMsg.data[3] = 0x00;                      // Reserved
-        readMsg.data[4] = 0x00;                      // Reserved
-        readMsg.data[5] = 0x00;                      // Reserved
-        readMsg.data[6] = 0x00;                      // Reserved
-        readMsg.data[7] = 0x00;                      // Reserved
-
-        // Send the command
-        sendCommand(readMsg);
+        CANMessage readMsg = buildCommand(COMM_TYPE_READ, &param);
+        sendCommand(readMsg, true);
     }
-
 };
 
-// Main function
-int main() {
-    string portName = "\\\\.\\COM7";
-    int baudRate = 921600;
+// Initialize the serial port
+HANDLE initializeSerial(const string& portName, int baudRate) {
     HANDLE hSerial = CreateFile(portName.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
 
     if (hSerial == INVALID_HANDLE_VALUE) {
         cerr << "Error: Could not open serial port " << portName << endl;
-        return 1;
+        exit(1);
     }
-
-    Motor j1(127, hSerial);
-    Motor j2(1, hSerial);
 
     // Configure serial port settings
     DCB dcbSerialParams = {0};
@@ -224,7 +234,7 @@ int main() {
     if (!GetCommState(hSerial, &dcbSerialParams)) {
         cerr << "Error: Could not get serial port state." << endl;
         CloseHandle(hSerial);
-        return 1;
+        exit(1);
     }
     dcbSerialParams.BaudRate = baudRate;
     dcbSerialParams.ByteSize = 8;
@@ -234,7 +244,7 @@ int main() {
     if (!SetCommState(hSerial, &dcbSerialParams)) {
         cerr << "Error: Could not set serial port state." << endl;
         CloseHandle(hSerial);
-        return 1;
+        exit(1);
     }
 
     // Set timeouts
@@ -248,20 +258,27 @@ int main() {
     if (!SetCommTimeouts(hSerial, &timeouts)) {
         cerr << "Error: Could not set timeouts." << endl;
         CloseHandle(hSerial);
-        return 1;
+        exit(1);
     }
 
-    // Test the motor commands
-    // j1.writeParameter(RUN_MODE, 1);
-    // j1.enable();
-    // j1.writeParameter(POSITION_SPEED_LIMIT, 1.0);
-    j1.writeParameter(POSITION_TARGET, 4.0);
-    // while (1) {
-    //     j1.readParameter(MECH_POS);
-    // }
+    return hSerial;
+}
 
+// Main function
+int main() {
+    HANDLE hSerial = initializeSerial("\\\\.\\COM7", 921600);
 
-    // Close the serial port
+    Motor j1(127, hSerial);
+    Motor j2(1, hSerial);
+
+    j1.writeParameter(RUN_MODE, 2);
+    j1.enable();
+    j1.writeParameter(SPEED_MAX_CURRENT, 23.0);
+    j1.writeParameter(SPEED_TARGET, 1.0);
+    while (1) {
+        j1.readParameter(MECH_POS);
+    }
+
     CloseHandle(hSerial);
     return 0;
 }
