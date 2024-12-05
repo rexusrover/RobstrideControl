@@ -3,26 +3,21 @@
 
 int main(){
 
-    init();
+    printf("Entering here\n");
+    Motor j1;
 
-    // command_construct(253, 1  , 0);
-    // print_debug();
-    // command_construct(253, 1, 1);
-    // print_debug();
-    // command_construct(253, 1, 3);
-    // print_debug();
-    command_construct(253, 1, 4);
-    print_debug();
-    // command_construct(253, 1, 6);
-    // print_debug();
-    // command_construct(253, 127, 7);
-    // print_debug();
-    // command_construct(253, 127, 17);
-    // print_debug();
-    // command_construct(253, 1, 18);
-    // print_debug();
+    j1.motor_enable();
+    j1.print_debug();
+    j1.setParameter(RUN_MODE, SPEED_MODE);
 
-    //printf("\nPrint float value: %x\n", 12.53);
-    //float_to_binary(12.53);
-    return 0;
+    // under is unhandled command, pls dont use into motor
+    // j1.setParameter(RUN_MODE, 1.0);
+    j1.print_debug();
+    j1.setParameter(SPD_MODE, 1.0);
+    j1.print_debug();
+    j1.setParameter(CURRENT_LIMIT, 23.0);
+    j1.print_debug();
+    printf("Out here\n");
+
+    return 1;
 }
