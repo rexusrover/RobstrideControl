@@ -6,6 +6,11 @@
 #include <cstring>
 #include <windows.h> // Windows API for serial communication
 
+// Constants for max current and speed
+#define DEFAULT_MAX_CURRENT 23.0
+#define DEFAULT_SPEED 1.0
+
+
 using namespace std;
 
 // Parameter Data Types
@@ -282,6 +287,42 @@ public:
         CANMessage readMsg = buildCommand(COMM_TYPE_READ, &param);
         sendCommand(readMsg, true);
     }
+
+    // Helper function for Velocity Control
+    void setVelocity(float velocity, float maxCurrent = DEFAULT_MAX_CURRENT) {
+        // Step 1: Set motor to Speed Mode
+        writeParameter(RUN_MODE, 2);
+
+        // Step 2: Enable the motor
+        enable();
+
+        // Step 3: Write optional parameters
+        writeParameter(SPEED_MAX_CURRENT, maxCurrent);
+
+        // Step 4: Write the target speed
+        writeParameter(SPEED_TARGET, velocity);
+
+        cout << "Motor " << (int)motorID << " set to velocity: " << velocity << " rad/s, max current: " << maxCurrent << " A" << endl;
+    }
+
+    // Helper function for Position Control
+    void setPosition(float position, float speed = DEFAULT_SPEED) {
+        // Step 1: Set motor to Position Mode
+        writeParameter(RUN_MODE, 1);
+
+        // Step 2: Enable the motor
+        enable();
+
+        // Step 3: Write optional parameters
+        writeParameter(POSITION_SPEED_LIMIT, speed);
+
+        // Step 4: Write the target position
+        writeParameter(POSITION_TARGET, position);
+
+        cout << "Motor " << (int)motorID << " set to position: " << position << " rad, speed limit: " << speed << " rad/s" << endl;
+    }
+
+
 };
 
 // Initialize the serial port
@@ -334,13 +375,28 @@ int main() {
     Motor j1(127, hSerial);
     Motor j2(1, hSerial);
 
-    j1.writeParameter(RUN_MODE, 2);
-    j1.enable();
-    j1.writeParameter(SPEED_MAX_CURRENT, 23.0);
-    j1.writeParameter(SPEED_TARGET, 1.0);
-    while (1) {
-        j1.readParameter(MECH_POS);
-    }
+    // j1.resetPosition();
+    // j2.resetPosition();
+
+    // j1.setPosition(-5);
+    // j2.setPosition(5);
+    
+    // j1.writeParameter(RUN_MODE, 2);
+    // j1.resetPosition();
+    // j1.enable();
+    // j1.writeParameter(SPEED_MAX_CURRENT, 23.0);
+    // j1.writeParameter(SPEED_TARGET, 1.0);
+
+    // j2.writeParameter(RUN_MODE, 2);
+    // j2.resetPosition();
+    // j2.enable();
+    // j2.writeParameter(SPEED_MAX_CURRENT, 23.0);
+    // j2.writeParameter(SPEED_TARGET, -1.0);
+
+    // while (1) {
+    //     j1.readParameter(MECH_POS);
+    //     j2.readParameter(MECH_POS);
+    // }
 
     CloseHandle(hSerial);
     return 0;
