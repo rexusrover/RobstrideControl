@@ -156,6 +156,7 @@ public:
         DWORD bytesRead;
 
         if (ReadFile(hSerial, buffer, sizeof(buffer), &bytesRead, NULL)) {
+            // Display the received raw data
             cout << "Received: ";
             for (DWORD i = 0; i < bytesRead; ++i) {
                 cout << hex << setw(2) << setfill('0') << (int)buffer[i] << " ";
@@ -170,15 +171,14 @@ public:
 
             // Extract the parameter index
             uint16_t paramIndex = (buffer[7] << 8) | buffer[8];
+            cout << "Parameter Index (Hex): " << hex << setw(4) << setfill('0') << paramIndex << endl;
 
-            // Extract the value based on the parameter type
-            float value = 0.0;
-            if (paramIndex == MECH_POS.index) {
-                memcpy(&value, &buffer[12], sizeof(float));
-                cout << "Parameter: MECH_POS, Value: " << value << endl;
-            } else {
-                cout << "Unknown parameter index: " << hex << paramIndex << endl;
+            // Extract the value (raw hex bytes) without interpreting
+            cout << "Parameter Value (Hex): ";
+            for (int i = 11; i < 15; ++i) { // Assuming value occupies bytes 12 to 15
+                cout << hex << setw(2) << setfill('0') << (int)buffer[i] << " ";
             }
+            cout << endl;
         } else {
             cerr << "Error reading from serial port" << endl;
         }
