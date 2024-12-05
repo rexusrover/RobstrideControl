@@ -43,7 +43,8 @@ enum CommunicationType {
     COMM_TYPE_ENABLE = 3,    // Enable motor
     COMM_TYPE_DISABLE = 4,   // Disable motor
     COMM_TYPE_WRITE = 18,     // Write parameter
-    COMM_TYPE_READ = 17
+    COMM_TYPE_READ = 17,
+    COMM_TYPE_RESET = 6 // Reset position
 };
 
 // Motor Class
@@ -167,7 +168,7 @@ public:
         DWORD bytesRead;
 
         if (ReadFile(hSerial, buffer, sizeof(buffer), &bytesRead, NULL)) {
-            // Display the received raw data
+            // Display the received raw command
             cout << "Received: ";
             for (DWORD i = 0; i < bytesRead; ++i) {
                 cout << hex << setw(2) << setfill('0') << (int)buffer[i] << " ";
@@ -180,45 +181,48 @@ public:
                 return;
             }
 
-            // Extract the parameter index
+            // Extract the parameter index (bytes 7 and 8)
             uint16_t paramIndex = (buffer[7] << 8) | buffer[8];
-            cout << "Parameter Index (Hex): " << hex << setw(4) << setfill('0') << paramIndex << endl;
 
+            // Extract the value (bytes 11 to 14)
+            uint32_t rawValue = (buffer[11]) | (buffer[12] << 8) | (buffer[13] << 16) | (buffer[14] << 24);
+
+            // Get parameter name
             string paramName = getParameterName(paramIndex);
-            cout << "Parameter Name: " << paramName << endl;
 
-            // Extract the value (raw hex bytes)
-            cout << "Parameter Value (Hex): ";
-            for (int i = 11; i < 11 + 4; ++i) { // Assuming value occupies bytes 12 to 15
-                cout << hex << setw(2) << setfill('0') << (int)buffer[i] << " ";
-            }
-            cout << endl;
-
-            // Decode and display the value based on parameter type
+            // Decode the value based on parameter type
             float floatValue = 0.0;
             uint16_t int16Value = 0;
             uint8_t int8Value = 0;
+            string interpretedValue;
 
             if (paramIndex == MECH_POS.index || paramIndex == SPEED_MAX_CURRENT.index ||
                 paramIndex == SPEED_TARGET.index || paramIndex == POSITION_TARGET.index) {
                 // Decode 4-byte FLOAT
-                memcpy(&floatValue, &buffer[11], sizeof(float));
-                cout << "Decoded Value: " << floatValue << endl;
+                memcpy(&floatValue, &rawValue, sizeof(float));
+                interpretedValue = to_string(floatValue);
             } else if (paramIndex == RUN_MODE.index) {
                 // Decode 1-byte INT8
                 int8Value = buffer[11];
-                cout << "Decoded Value: " << (int)int8Value << endl;
+                interpretedValue = to_string(static_cast<int>(int8Value));
             } else if (paramIndex == POSITION_SPEED_LIMIT.index) {
                 // Decode 2-byte INT16
                 int16Value = (buffer[11] | (buffer[12] << 8));
-                cout << "Decoded Value: " << int16Value << endl;
+                interpretedValue = to_string(int16Value);
             } else {
-                cout << "Decoded Value: UNKNOWN" << endl;
+                interpretedValue = "UNKNOWN";
             }
+
+            // Print all details in the next line
+            cout << "Param Hex: " << hex << setw(4) << setfill('0') << paramIndex
+                << " (" << paramName << "), Value Hex: " << hex << setw(8) << setfill('0') << rawValue
+                << " (" << interpretedValue << ")" << endl;
+
         } else {
             cerr << "Error reading from serial port" << endl;
         }
     }
+
 
     // Read response from the motor (non-interpreted)
     void readResponse() {
@@ -235,6 +239,25 @@ public:
             cerr << "Error reading from serial port" << endl;
         }
     }
+
+    // Reset Position to 0
+    void resetPosition() {
+        CANMessage resetMsg;
+
+        // Calculate the extended header for COMM_TYPE_RESET
+        vector<uint8_t> extendedHeader = calculateExtendedHeader(COMM_TYPE_RESET);
+        memcpy(resetMsg.extendedHeader, extendedHeader.data(), 4);
+
+        // Fill the Data Area
+        resetMsg.data[0] = 0x01; // Reset position indicator
+        for (int i = 1; i < 8; i++) {
+            resetMsg.data[i] = 0x00; // Fill rest with zero
+        }
+
+        // Send the reset command
+        sendCommand(resetMsg);
+    }
+
 
     // Enable Motor
     void enable() {
