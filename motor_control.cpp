@@ -150,6 +150,17 @@ public:
         }
     }
 
+    // Map parameter index to parameter name
+    string getParameterName(uint16_t paramIndex) {
+        if (paramIndex == RUN_MODE.index) return "RUN_MODE";
+        if (paramIndex == SPEED_MAX_CURRENT.index) return "SPEED_MAX_CURRENT";
+        if (paramIndex == SPEED_TARGET.index) return "SPEED_TARGET";
+        if (paramIndex == POSITION_SPEED_LIMIT.index) return "POSITION_SPEED_LIMIT";
+        if (paramIndex == POSITION_TARGET.index) return "POSITION_TARGET";
+        if (paramIndex == MECH_POS.index) return "MECH_POS";
+        return "UNKNOWN_PARAMETER";
+    }
+
     // Read and interpret response from the motor
     void readAndInterpretResponse() {
         uint8_t buffer[1024] = {0};
@@ -173,12 +184,37 @@ public:
             uint16_t paramIndex = (buffer[7] << 8) | buffer[8];
             cout << "Parameter Index (Hex): " << hex << setw(4) << setfill('0') << paramIndex << endl;
 
-            // Extract the value (raw hex bytes) without interpreting
+            string paramName = getParameterName(paramIndex);
+            cout << "Parameter Name: " << paramName << endl;
+
+            // Extract the value (raw hex bytes)
             cout << "Parameter Value (Hex): ";
-            for (int i = 11; i < 15; ++i) { // Assuming value occupies bytes 12 to 15
+            for (int i = 11; i < 11 + 4; ++i) { // Assuming value occupies bytes 12 to 15
                 cout << hex << setw(2) << setfill('0') << (int)buffer[i] << " ";
             }
             cout << endl;
+
+            // Decode and display the value based on parameter type
+            float floatValue = 0.0;
+            uint16_t int16Value = 0;
+            uint8_t int8Value = 0;
+
+            if (paramIndex == MECH_POS.index || paramIndex == SPEED_MAX_CURRENT.index ||
+                paramIndex == SPEED_TARGET.index || paramIndex == POSITION_TARGET.index) {
+                // Decode 4-byte FLOAT
+                memcpy(&floatValue, &buffer[11], sizeof(float));
+                cout << "Decoded Value: " << floatValue << endl;
+            } else if (paramIndex == RUN_MODE.index) {
+                // Decode 1-byte INT8
+                int8Value = buffer[11];
+                cout << "Decoded Value: " << (int)int8Value << endl;
+            } else if (paramIndex == POSITION_SPEED_LIMIT.index) {
+                // Decode 2-byte INT16
+                int16Value = (buffer[11] | (buffer[12] << 8));
+                cout << "Decoded Value: " << int16Value << endl;
+            } else {
+                cout << "Decoded Value: UNKNOWN" << endl;
+            }
         } else {
             cerr << "Error reading from serial port" << endl;
         }
