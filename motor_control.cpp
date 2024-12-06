@@ -9,6 +9,7 @@
 // Constants for max current and speed
 #define DEFAULT_MAX_CURRENT 23.0
 #define DEFAULT_SPEED 1.0
+#define DEFAULT_MAX_ACC 1.0
 
 
 using namespace std;
@@ -34,6 +35,9 @@ const Parameter SPEED_TARGET = {0x0A70, DataType::FLOAT, 4};
 const Parameter POSITION_SPEED_LIMIT = {0x1770, DataType::FLOAT, 4};
 const Parameter POSITION_TARGET = {0x1670, DataType::FLOAT, 4};
 const Parameter MECH_POS = {0x1970, DataType::FLOAT, 4};
+const Parameter SPEED_ACCELERATION = {0x2270, DataType::FLOAT, 4};
+const Parameter POSITION_03_SPEED = {0x2470, DataType::FLOAT, 4};
+const Parameter POSITION_ACCELERATION = {0x2570, DataType::FLOAT, 4};
 
 // Command Structure
 struct CANMessage {
@@ -164,6 +168,9 @@ public:
         if (paramIndex == POSITION_SPEED_LIMIT.index) return "POSITION_SPEED_LIMIT";
         if (paramIndex == POSITION_TARGET.index) return "POSITION_TARGET";
         if (paramIndex == MECH_POS.index) return "MECH_POS";
+        if (paramIndex == SPEED_ACCELERATION.index) return "SPEED_ACCELERATION";
+        if (paramIndex == POSITION_03_SPEED.index) return "POSITION_03_SPEED";
+        if (paramIndex == POSITION_ACCELERATION.index) return "POSITION_ACCELERATION";
         return "UNKNOWN_PARAMETER";
     }
 
@@ -202,7 +209,7 @@ public:
             string interpretedValue;
 
             if (paramIndex == MECH_POS.index || paramIndex == SPEED_MAX_CURRENT.index ||
-                paramIndex == SPEED_TARGET.index || paramIndex == POSITION_TARGET.index) {
+                paramIndex == SPEED_TARGET.index || paramIndex == POSITION_TARGET.index || paramIndex == SPEED_ACCELERATION.index || paramIndex == POSITION_03_SPEED.index || paramIndex == POSITION_ACCELERATION.index) {
                 // Decode 4-byte FLOAT
                 memcpy(&floatValue, &rawValue, sizeof(float));
                 interpretedValue = to_string(floatValue);
@@ -289,7 +296,7 @@ public:
     }
 
     // Helper function for Velocity Control
-    void setVelocity(float velocity, float maxCurrent = DEFAULT_MAX_CURRENT) {
+    void setVelocity(float velocity, float maxCurrent = DEFAULT_MAX_CURRENT, float maxAcc = DEFAULT_MAX_ACC ) {
         // Step 1: Set motor to Speed Mode
         writeParameter(RUN_MODE, 2);
 
@@ -298,6 +305,7 @@ public:
 
         // Step 3: Write optional parameters
         writeParameter(SPEED_MAX_CURRENT, maxCurrent);
+        writeParameter(SPEED_ACCELERATION, maxAcc);
 
         // Step 4: Write the target speed
         writeParameter(SPEED_TARGET, velocity);
@@ -306,7 +314,7 @@ public:
     }
 
     // Helper function for Position Control
-    void setPosition(float position, float speed = DEFAULT_SPEED) {
+    void setPosition(float position, float speed = DEFAULT_SPEED, float maxAcc = DEFAULT_MAX_ACC) {
         // Step 1: Set motor to Position Mode
         writeParameter(RUN_MODE, 1);
 
@@ -315,6 +323,8 @@ public:
 
         // Step 3: Write optional parameters
         writeParameter(POSITION_SPEED_LIMIT, speed);
+        writeParameter(POSITION_03_SPEED, speed);
+        writeParameter(POSITION_ACCELERATION, maxAcc);
 
         // Step 4: Write the target position
         writeParameter(POSITION_TARGET, position);
@@ -374,6 +384,17 @@ int main() {
 
     Motor j1(127, hSerial);
     Motor j2(1, hSerial);
+
+    //j2.resetPosition();
+    j2.setPosition(5.0);
+
+    while (1) {
+        j2.readParameter(MECH_POS);
+    }
+
+    // j2.enable();
+    // j1.enable();
+
 
     // j1.resetPosition();
     // j2.resetPosition();
