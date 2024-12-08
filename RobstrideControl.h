@@ -253,7 +253,7 @@ public:
         writeParameter(POSITION_TARGET, position);
     }
 
-    void setVelocity(float velocity, float maxCurrent = DEFAULT_MAX_CURRENT, float maxAcc = DEFAULT_MAX_ACC) {
+    void setVelocity(float velocity, float maxAcc = DEFAULT_MAX_ACC, float maxCurrent = DEFAULT_MAX_CURRENT) {
         writeParameter(RUN_MODE, 2);
         enable();
         writeParameter(SPEED_MAX_CURRENT, maxCurrent);
