@@ -1,2 +1,25 @@
 motor_control.exe
 .vscode/settings.json
+
+# ROS 2 workspace
+ros2_ws/build/
+ros2_ws/install/
+ros2_ws/log/
+
+# macOS system files
+.DS_Store
+
+# Editor-specific
+.vscode/
+*.swp
+*.swo
+.idea/
+
+# Python bytecode files
+__pycache__/
+*.pyc
+*.pyo
+
+# Arduino temporary files
+arduino_files/*.tmp
+arduino_files/*.log
