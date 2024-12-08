@@ -55,16 +55,12 @@ Below is an overview of how CAN commands are formed for the motor:
 ### **General Notes on Command Formation**:
 1. **Message ID**:
    - The message ID includes the communication type, host ID, and motor CAN ID.
-   - Example: `0x1200FD7F` represents a write command to motor `127` from host `253`.
+   - Example: `0x1200FD7F` represents a write command(comm type 18) to motor `127` from host `253`.
 
 2. **Data Area**:
    - Parameter index: First 2 bytes.
    - Reserved: Next 2 bytes (always `0x00 0x00`).
-   - Value: Remaining bytes based on the parameter type (e.g., IEEE754 for floats).
-
-3. **Little-Endian Encoding**:
-   - Float values are encoded in IEEE754 single-precision format in little-endian order.
-
+   - Value: Remaining bytes based on the parameter type (e.g., IEEE754 for floats). Float values are encoded in IEEE754 single-precision format in little-endian order.
 ---
 
 compile command for motor_control.cpp: g++ -o motor_control motor_control.cpp -lstdc++ -lsetupapi
