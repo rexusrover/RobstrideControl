@@ -32,9 +32,9 @@ Below are the motor parameters available, including their indexes and descriptio
 | `POSITION_SPEED_LIMIT`     | `0x1770`  | `FLOAT`   | Maximum speed in position mode (rad/s).                                                 |
 | `POSITION_TARGET`          | `0x1670`  | `FLOAT`   | Target position for the motor in position mode (rad).                                    |
 | `MECH_POS`                 | `0x1970`  | `FLOAT`   | Current mechanical position of the motor (rad).                                          |
-| `SPEED_ACCELERATION`       | `0x2270`  | `FLOAT`   | Acceleration limit in speed mode (rad/s²).                                              |
-| `POSITION_03_SPEED`        | `0x2470`  | `FLOAT`   | Speed for position control (rad/s).                                                     |
-| `POSITION_ACCELERATION`    | `0x2570`  | `FLOAT`   | Acceleration limit in position control (rad/s²).                                        |
+| `SPEED_ACCELERATION`       | `0x2270`  | `FLOAT`   | Acceleration limit in speed mode for ROB03 (rad/s²).                                     |
+| `POSITION_03_SPEED`        | `0x2470`  | `FLOAT`   | Speed for position control for ROB03 (rad/s).                                            |
+| `POSITION_ACCELERATION`    | `0x2570`  | `FLOAT`   | Acceleration limit in position control for ROB03 (rad/s²).                                |
 
 ---
 
