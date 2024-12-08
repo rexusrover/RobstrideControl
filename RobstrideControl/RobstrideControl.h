@@ -1,4 +1,8 @@
+#ifndef ROBSTRIDE_CONTROL_H
+#define ROBSTRIDE_CONTROL_H
+
 #include "CAN.h"
+#include "mbed.h"
 
 // Define CAN pins for Arduino GIGA R1
 mbed::CAN can1(PB_5, PB_13); // TX: PB_5, RX: PB_13
@@ -246,32 +250,4 @@ public:
     }
 };
 
-Motor motor(127);
-
-// Setup Function
-void setup() {
-    Serial.begin(115200);
-    while (!Serial); // Wait for Serial Monitor to open
-
-    if (can1.frequency(1000000)) {
-        Serial.println("CAN bus initialized at 1 Mbps");
-    } else {
-        Serial.println("Failed to initialize CAN bus");
-        while (true);
-    }
-
-
-    //motor.enable();
-    //motor.disable();
-    //motor.writeParameter(RUN_MODE, 2);
-    //motor.readParameter(RUN_MODE);
-    //motor.setVelocity(-2.0);
-    //motor.resetPosition();
-    //motor.setPosition(5.0);
-    
-}
-
-// Loop Function
-void loop() {
-  //motor.readParameter(MECH_POS);
-}
+#endif
