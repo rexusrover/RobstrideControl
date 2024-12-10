@@ -21,7 +21,7 @@ void initializeCAN(uint32_t baudRate = 1000000) {
 
 // Constants for default settings
 #define DEFAULT_MAX_CURRENT 23.0
-#define DEFAULT_SPEED 10.0
+#define DEFAULT_SPEED 1.0
 #define DEFAULT_MAX_ACC 20.0
 
 // Parameter Data Types
