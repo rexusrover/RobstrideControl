@@ -7,14 +7,25 @@
 // Define CAN pins for Arduino GIGA R1
 mbed::CAN can1(PB_5, PB_13); // TX: PB_5, RX: PB_13
 
+// Debug Macro
+#define DEBUG 0 // Set to 1 to enable debug prints, 0 to disable
+
+#if DEBUG
+    #define DEBUG_PRINT(...) Serial.print(__VA_ARGS__)
+    #define DEBUG_PRINTLN(...) do { Serial.print(__VA_ARGS__); Serial.println(); } while (0)
+#else
+    #define DEBUG_PRINT(...)
+    #define DEBUG_PRINTLN(...)
+#endif
+
 void initializeCAN(uint32_t baudRate = 1000000) {
     Serial.begin(115200);
     //while (!Serial); // Wait for Serial Monitor to open
 
     if (can1.frequency(baudRate)) {
-        // Serial.println("CAN bus initialized at 1 Mbps");
+        DEBUG_PRINTLN("CAN bus initialized at 1 Mbps");
     } else {
-        // Serial.println("Failed to initialize CAN bus");
+        DEBUG_PRINTLN("Failed to initialize CAN bus");
         while (true);
     }
 }
@@ -106,23 +117,21 @@ public:
 
         mbed::CANMessage msg(msgID, data, sizeof(data), CANData, CANAny);
 
-        // Send the message and verify success
         if (can1.write(msg)) {
-            // Serial.print("Sent: ID: ");
-            // Serial.print(msgID, HEX);
-            // Serial.print(" | Data: ");
-            // for (int i = 0; i < 8; i++) {
-            //     Serial.print("0x");
-            //     if (data[i] < 0x10) Serial.print("0"); // Add leading zero for single-digit hex
-            //     Serial.print(data[i], HEX);
-            //     Serial.print(" ");
-            // }
-            // Serial.println();
+            DEBUG_PRINT("Sent: ID: ");
+            DEBUG_PRINT(msgID, HEX);
+            DEBUG_PRINT(" | Data: ");
+            for (int i = 0; i < 8; i++) {
+                DEBUG_PRINT("0x");
+                if (data[i] < 0x10) DEBUG_PRINT("0");
+                DEBUG_PRINT(data[i], HEX);
+                DEBUG_PRINT(" ");
+            }
+            DEBUG_PRINTLN("");
         } else {
-            // Serial.println("Failed to send CAN message.");
+            DEBUG_PRINTLN("Failed to send CAN message.");
         }
 
-        // Receive and process response
         if (interpretResponse) {
             readAndInterpretResponse();
         } else {
@@ -138,18 +147,18 @@ public:
         mbed::CANMessage msg(msgID, data, sizeof(data), CANData, CANAny);
 
         if (can1.write(msg)) {
-            // Serial.print("Sent: ID: ");
-            // Serial.print(msgID, HEX);
-            // Serial.print(" | Data: ");
-            // for (int i = 0; i < 8; i++) {
-            //     Serial.print("0x");
-            //     if (data[i] < 0x10) Serial.print("0");
-            //     Serial.print(data[i], HEX);
-            //     Serial.print(" ");
-            // }
-            // Serial.println();
+            DEBUG_PRINT("Sent: ID: ");
+            DEBUG_PRINT(msgID, HEX);
+            DEBUG_PRINT(" | Data: ");
+            for (int i = 0; i < 8; i++) {
+                DEBUG_PRINT("0x");
+                if (data[i] < 0x10) DEBUG_PRINT("0");
+                DEBUG_PRINT(data[i], HEX);
+                DEBUG_PRINT(" ");
+            }
+            DEBUG_PRINTLN("");
         } else {
-            // Serial.println("Failed to send Reset Position command.");
+            DEBUG_PRINTLN("Failed to send Reset Position command.");
         }
         readResponse();
     }
@@ -170,11 +179,9 @@ public:
 
     // Read Parameter Command with Interpretation
     void readParameter(const Parameter& param) {
-        // Clear CAN buffer by reading any old messages
         mbed::CANMessage tempMsg;
         while (can1.read(tempMsg)) {} // Read and discard old messages
 
-        // Send the read parameter command
         sendCommand(COMM_TYPE_READ, &param, 0.0, true);
     }
 
@@ -184,7 +191,7 @@ public:
         unsigned long startTime = millis();
         bool responseReceived = false;
 
-        while (millis() - startTime < 100) { // 100 ms timeout
+        while (millis() - startTime < 100) {
             if (can1.read(receivedMsg)) {
                 responseReceived = true;
                 break;
@@ -192,20 +199,18 @@ public:
         }
 
         if (responseReceived) {
-            // Serial.print("Received: ID: ");
-            // Serial.print(receivedMsg.id, HEX);
-            // Serial.print(" | Data: ");
-            // for (int i = 0; i < receivedMsg.len; i++) {
-            //     Serial.print("0x");
-            //     if (receivedMsg.data[i] < 0x10) Serial.print("0");
-            //     Serial.print(receivedMsg.data[i], HEX);
-            //     Serial.print(" ");
-            // }
-            // Serial.println();
-
-            // Interpret response logic
+            DEBUG_PRINT("Received: ID: ");
+            DEBUG_PRINT(receivedMsg.id, HEX);
+            DEBUG_PRINT(" | Data: ");
+            for (int i = 0; i < receivedMsg.len; i++) {
+                DEBUG_PRINT("0x");
+                if (receivedMsg.data[i] < 0x10) DEBUG_PRINT("0");
+                DEBUG_PRINT(receivedMsg.data[i], HEX);
+                DEBUG_PRINT(" ");
+            }
+            DEBUG_PRINTLN("");
         } else {
-            // Serial.println("No response received within timeout.");
+            DEBUG_PRINTLN("No response received within timeout.");
         }
     }
 
@@ -215,7 +220,7 @@ public:
         unsigned long startTime = millis();
         bool responseReceived = false;
 
-        while (millis() - startTime < 100) { // 100 ms timeout
+        while (millis() - startTime < 100) {
             if (can1.read(receivedMsg)) {
                 responseReceived = true;
                 break;
@@ -223,16 +228,16 @@ public:
         }
 
         if (responseReceived) {
-            // Serial.print("Received: ID: ");
-            // Serial.print(receivedMsg.id, HEX);
-            // Serial.print(" | Data: ");
-            // for (int i = 0; i < receivedMsg.len; i++) {
-            //     Serial.print("0x");
-            //     if (receivedMsg.data[i] < 0x10) Serial.print("0");
-            //     Serial.print(receivedMsg.data[i], HEX);
-            //     Serial.print(" ");
-            // }
-            // Serial.println();
+            DEBUG_PRINT("Received: ID: ");
+            DEBUG_PRINT(receivedMsg.id, HEX);
+            DEBUG_PRINT(" | Data: ");
+            for (int i = 0; i < receivedMsg.len; i++) {
+                DEBUG_PRINT("0x");
+                if (receivedMsg.data[i] < 0x10) DEBUG_PRINT("0");
+                DEBUG_PRINT(receivedMsg.data[i], HEX);
+                DEBUG_PRINT(" ");
+            }
+            DEBUG_PRINTLN("");
         }
     }
 
