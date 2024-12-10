@@ -9,7 +9,7 @@ mbed::CAN can1(PB_5, PB_13); // TX: PB_5, RX: PB_13
 
 void initializeCAN(uint32_t baudRate = 1000000) {
     Serial.begin(115200);
-    while (!Serial); // Wait for Serial Monitor to open
+    //while (!Serial); // Wait for Serial Monitor to open
 
     if (can1.frequency(baudRate)) {
         // Serial.println("CAN bus initialized at 1 Mbps");
@@ -21,7 +21,7 @@ void initializeCAN(uint32_t baudRate = 1000000) {
 
 // Constants for default settings
 #define DEFAULT_MAX_CURRENT 23.0
-#define DEFAULT_SPEED 10.0
+#define DEFAULT_SPEED 1.0
 #define DEFAULT_MAX_ACC 20.0
 
 // Parameter Data Types
