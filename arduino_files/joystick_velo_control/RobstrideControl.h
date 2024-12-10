@@ -178,14 +178,18 @@ public:
     }
 
     // Read Parameter Command with Interpretation
-    void readParameter(const Parameter& param) {
+    float readParameter(const Parameter& param) {
         mbed::CANMessage tempMsg;
-        while (can1.read(tempMsg)) {} // Read and discard old messages
+        while (can1.read(tempMsg)) {} // Clear old messages
 
         sendCommand(COMM_TYPE_READ, &param, 0.0, true);
+
+        return lastReceivedValue; // Return the last parsed value
     }
 
     // Read and Interpret Response
+    float lastReceivedValue = 0.0; // Add this as a member variable in the Motor class
+
     void readAndInterpretResponse() {
         mbed::CANMessage receivedMsg;
         unsigned long startTime = millis();
@@ -209,6 +213,19 @@ public:
                 DEBUG_PRINT(" ");
             }
             DEBUG_PRINTLN("");
+
+            // Parse the response (assuming it's a float in bytes 4-7)
+            if (receivedMsg.len >= 8) {
+                uint32_t valueHex = (receivedMsg.data[7] << 24) |
+                                    (receivedMsg.data[6] << 16) |
+                                    (receivedMsg.data[5] << 8) |
+                                    receivedMsg.data[4];
+                memcpy(&lastReceivedValue, &valueHex, sizeof(float));
+                DEBUG_PRINT("Parsed Value: ");
+                DEBUG_PRINTLN(lastReceivedValue, 4);
+            } else {
+                DEBUG_PRINTLN("Invalid message length for parsing.");
+            }
         } else {
             DEBUG_PRINTLN("No response received within timeout.");
         }
