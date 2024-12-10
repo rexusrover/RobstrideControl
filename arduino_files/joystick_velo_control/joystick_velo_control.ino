@@ -1,22 +1,28 @@
 #include "RobstrideControl.h"
 
-Motor motor1(2);
+Motor motor(2);
 
 void setup() {
-  // put your setup code here, to run once:
-  initializeCAN();
+    initializeCAN();
+    motor.resetPosition();
+    //motor.setVelocity(-1.0);
+    //motor.setPosition(0.0);
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  if (Serial.available()) {
-        String command = Serial.readStringUntil('\n');
-        if (command.startsWith("VEL:")) {
-            float velocity = command.substring(4).toFloat();
-            motor1.setVelocity(velocity);
-            Serial.print("ACK: Received Velocity: ");
-            Serial.println(velocity);
-        }
-    }
+    if (Serial.available()) {
+        // Read the incoming angle as a string
+        String received_angle = Serial.readStringUntil('\n');
 
+        // Echo the angle back to ROS
+        // Serial.print("ACK: ");
+        // Serial.println(received_angle);
+
+        // Optional: Parse and log the received angle
+        float angle = received_angle.toFloat();
+        //Serial.print("Received angle: ");
+        //Serial.println(angle, 4);  // Print with 4 decimal precision
+        motor.setPosition(angle);
+
+    }
 }
