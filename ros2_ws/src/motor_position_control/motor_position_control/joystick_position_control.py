@@ -82,7 +82,8 @@ class JoystickPositionControl(Node):
         self.publisher.publish(angle_msg)
 
         # Send the final target angle to the Arduino
-        self.send_to_arduino(final_target_angle)
+        if(x != 0 or y != 0):
+            self.send_to_arduino(final_target_angle)
 
 
     def send_to_arduino(self, angle):

@@ -7,6 +7,8 @@
 // Define CAN pins for Arduino GIGA R1
 mbed::CAN can1(PB_5, PB_13); // TX: PB_5, RX: PB_13
 
+#define PI 3.1415926
+
 // Debug Macro
 #define DEBUG 0 // Set to 1 to enable debug prints, 0 to disable
 
@@ -260,12 +262,27 @@ public:
 
     // Set Position
     void setPosition(float position, float speed = DEFAULT_SPEED, float maxAcc = DEFAULT_MAX_ACC) {
+        float currentAngle = readParameter(MECH_POS);
+        float diff;
         writeParameter(RUN_MODE, 1);
         enable();
+
+        while(position < currentAngle){
+            position += 2*PI;
+        }
+
+        diff = position - currentAngle;
+        if(diff >= PI/2){
+            if(diff >= 6.18) return;
+        }
+        if(diff <= PI/2){
+            if(diff <= 0.1) return;
+        }
         writeParameter(POSITION_SPEED_LIMIT, speed);
         writeParameter(POSITION_03_SPEED, speed);
         writeParameter(POSITION_ACCELERATION, maxAcc);
         writeParameter(POSITION_TARGET, position);
+
     }
 
     void setVelocity(float velocity, float maxAcc = DEFAULT_MAX_ACC, float maxCurrent = DEFAULT_MAX_CURRENT) {
