@@ -23,7 +23,7 @@ class JoystickPositionControl(Node):
         self.publisher = self.create_publisher(Float32, '/motor_position', 10)
 
         # Setup serial communication with Arduino
-        self.serial_port = serial.Serial('/dev/ttyACM0', 115200, timeout=1)
+        self.serial_port = serial.Serial('/dev/ttyACM1', 115200, timeout=1)
 
         # Start a separate thread to listen for Arduino responses
         self.serial_thread = threading.Thread(target=self.read_arduino_echo, daemon=True)
@@ -82,7 +82,7 @@ class JoystickPositionControl(Node):
         self.publisher.publish(angle_msg)
 
         # Send the final target angle to the Arduino
-        if(x != 0 or y != 0):
+        if(x != 0.0 or y != 0.0):
             self.send_to_arduino(final_target_angle)
 
 

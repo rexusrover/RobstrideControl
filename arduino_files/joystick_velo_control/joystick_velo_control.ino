@@ -1,6 +1,9 @@
 #include "RobstrideControl.h"
 
 Motor motor(2);
+// Motor motor(127);
+
+float currentAngle;
 
 void setup() {
     initializeCAN();
@@ -22,6 +25,10 @@ void loop() {
         float angle = received_angle.toFloat();
         //Serial.print("Received angle: ");
         //Serial.println(angle, 4);  // Print with 4 decimal precision
+        // currentAngle = motor.readParameter(MECH_POS);
+        // while(angle < currentAngle){
+        //     angle += 2 * PI;
+        // }
         motor.setPosition(angle);
 
     }

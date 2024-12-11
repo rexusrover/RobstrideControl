@@ -4,6 +4,8 @@
 #include "CAN.h"
 #include "mbed.h"
 
+#define PI 3.1415926
+
 // Define CAN pins for Arduino GIGA R1
 mbed::CAN can1(PB_5, PB_13); // TX: PB_5, RX: PB_13
 
