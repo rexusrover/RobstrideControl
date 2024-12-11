@@ -32,7 +32,7 @@ void initializeCAN(uint32_t baudRate = 1000000) {
 
 // Constants for default settings
 #define DEFAULT_MAX_CURRENT 23.0
-#define DEFAULT_SPEED 1.0
+#define DEFAULT_SPEED 10.0
 #define DEFAULT_MAX_ACC 20.0
 
 // Parameter Data Types
@@ -260,12 +260,28 @@ public:
 
     // Set Position
     void setPosition(float position, float speed = DEFAULT_SPEED, float maxAcc = DEFAULT_MAX_ACC) {
+        float currentPosition = readParameter(MECH_POS); // Read the current position in radians
+        float targetPosition = position;
+
+        // Calculate the shortest path
+        float delta = targetPosition - currentPosition;
+
+        if (delta > M_PI) {
+            targetPosition -= 2 * M_PI; // Adjust down for shortest path
+        } else if (delta < -M_PI) {
+            targetPosition += 2 * M_PI; // Adjust up for shortest path
+        }
+
+        // Map target position to multi-turn absolute
+        targetPosition += round((currentPosition - targetPosition) / (2 * M_PI)) * 2 * M_PI;
+
+        // Write parameters and send commands
         writeParameter(RUN_MODE, 1);
         enable();
         writeParameter(POSITION_SPEED_LIMIT, speed);
         writeParameter(POSITION_03_SPEED, speed);
         writeParameter(POSITION_ACCELERATION, maxAcc);
-        writeParameter(POSITION_TARGET, position);
+        writeParameter(POSITION_TARGET, targetPosition);
     }
 
     void setVelocity(float velocity, float maxAcc = DEFAULT_MAX_ACC, float maxCurrent = DEFAULT_MAX_CURRENT) {
